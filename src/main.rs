@@ -1,5 +1,8 @@
+use std::cell::RefCell;
 use std::path::Path;
+use std::rc::Rc;
 
+use render::manager::TextureManager;
 use sdl2::mixer::InitFlag;
 use sdl2::{event::Event, pixels::Color};
 
@@ -29,16 +32,14 @@ fn main() {
         .unwrap();
 
     let texture_creator = canvas.texture_creator();
+    let mut texture_manager = TextureManager::new();
 
-    let texture0 =
-        texture::load_from_json(&texture_creator, Path::new("assets/font.json")).unwrap();
+    texture_manager.load(&texture_creator, "font", Path::new("assets/font.json")).expect("loading font failed");
+    texture_manager.load(&texture_creator, "sprite.human", Path::new("assets/human.bmp")).expect("loading sprite.human failed");
 
-    let texture1 =
-        texture::load_from_file(&texture_creator, Path::new("assets/human.bmp")).unwrap();
 
     let font0 = Font::load(
-        &texture_creator,
-        Path::new("assets/font.json"),
+        texture_manager.get("font"),
         "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 .,!?",
     )
     .unwrap();
@@ -62,6 +63,8 @@ fn main() {
 
     let mut event_pump = sdl_context.event_pump().unwrap();
     let mut frames: u64 = 0;
+
+    let texture1 = texture_manager.get("sprite.human");
 
     canvas.set_draw_color(Color::RGB(0, 0, 0));
     canvas.clear();

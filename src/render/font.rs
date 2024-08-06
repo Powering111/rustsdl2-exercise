@@ -5,6 +5,7 @@ use sdl2::video::{Window, WindowContext};
 
 use crate::error::Error;
 
+use super::manager::TextureManager;
 use super::texture::{self, Point, Rect, Size, Texture};
 
 /// Single-textured font.
@@ -15,12 +16,11 @@ pub struct Font<'a> {
 
 impl<'a> Font<'a> {
     pub fn load(
-        texture_creator: &'a TextureCreator<WindowContext>,
-        path: &Path,
+        texture: Texture<'a>,
         map: &'static str,
     ) -> Result<Self, Error> {
         Ok(Self {
-            texture: texture::load_from_json(texture_creator, path)?,
+            texture,
             map,
         })
     }

@@ -1,5 +1,6 @@
 use std::fs;
 use std::path::Path;
+use std::rc::Rc;
 
 use crate::error::Error;
 
@@ -67,46 +68,67 @@ struct Metadata {
     meta: FileMetadata,
 }
 
+pub type Texture<'a> = Rc<TextureInner<'a>>;
+
 /// sdl2 texture and its subtexture positions
-pub struct Texture<'a> {
+pub struct TextureInner<'a> {
     sdl_texture: sdl2::render::Texture<'a>,
     positions: Vec<SubTexturePosition>,
 }
 
-impl<'a> Texture<'a> {
-    /// load image from JSON metadata
-    pub fn load_from_json(
-        texture_creator: &'a TextureCreator<WindowContext>,
-        path: &Path,
-    ) -> Result<Self, Error> {
-        let meta_str = fs::read_to_string(path).map_err(|_| Error::FileReadFailure)?;
-        let metadata: Metadata =
-            serde_json::from_str(meta_str.as_str()).map_err(|_| Error::JSONParseFailure)?;
+/// load image from JSON metadata
+/// the JSON metadata may be generated from Aseprite.
+pub fn load_from_json<'a>(
+    texture_creator: &'a TextureCreator<WindowContext>,
+    path: &Path,
+) -> Result<Texture<'a>, Error> {
+    let meta_str = fs::read_to_string(path).map_err(|_| Error::FileReadFailure)?;
+    let metadata: Metadata =
+        serde_json::from_str(meta_str.as_str()).map_err(|_| Error::JSONParseFailure)?;
 
-        let sdl_texture = texture_creator
-            .load_texture(path.parent().unwrap().join(metadata.meta.image))
-            .map_err(|_| Error::TextureCreateFailure)?;
+    let sdl_texture = texture_creator
+        .load_texture(path.parent().unwrap().join(metadata.meta.image))
+        .map_err(|_| Error::TextureCreateFailure)?;
 
-        Ok(Self {
-            sdl_texture,
-            positions: metadata.frames,
-        })
+    Ok(Rc::new(TextureInner {
+        sdl_texture,
+        positions: metadata.frames,
+    }))
+}
+
+pub fn load_from_file<'a>(
+    texture_creator: &'a TextureCreator<WindowContext>,
+    path: &Path,
+) -> Result<Texture<'a>, Error> {
+    let sdl_texture = texture_creator
+        .load_texture(path)
+        .map_err(|_| Error::TextureCreateFailure)?;
+    Ok(Rc::new(TextureInner {
+        sdl_texture,
+        positions: vec![],
+    }))
+}
+
+impl<'a> TextureInner<'a> {
+    pub fn draw(&self, canvas: &mut Canvas<Window>, rect: Rect) {
+        canvas
+            .copy::<Option<_>, sdl2::rect::Rect>(&self.sdl_texture, None, rect.into())
+            .unwrap();
     }
 
-    pub fn draw(&self, canvas: &mut Canvas<Window>, position: Rect, idx: usize) {
+    pub fn draw_idx(&self, canvas: &mut Canvas<Window>, rect: Rect, idx: usize) {
         let texture_position: &SubTexturePosition = self.positions.get(idx).unwrap();
         let from_rect: Rect = texture_position.frame;
 
-        let width_ratio: f32 = position.w as f32 / texture_position.sourceSize.w as f32;
-        let height_ratio: f32 = position.h as f32 / texture_position.sourceSize.h as f32;
+        let width_ratio: f32 = rect.w as f32 / texture_position.sourceSize.w as f32;
+        let height_ratio: f32 = rect.h as f32 / texture_position.sourceSize.h as f32;
         let to_rect = Rect {
-            x: position.x
-                + (texture_position.spriteSourceSize.x as f32 * width_ratio).round() as i32,
-            y: position.y
-                + (texture_position.spriteSourceSize.y as f32 * height_ratio).round() as i32,
+            x: rect.x + (texture_position.spriteSourceSize.x as f32 * width_ratio).round() as i32,
+            y: rect.y + (texture_position.spriteSourceSize.y as f32 * height_ratio).round() as i32,
             w: (texture_position.spriteSourceSize.w as f32 * width_ratio).round() as u32,
             h: (texture_position.spriteSourceSize.h as f32 * height_ratio).round() as u32,
         };
+        // Render range rectangle
         // canvas.set_draw_color(sdl2::pixels::Color::RGB(255, 0, 0));
         // canvas.draw_rect(position.clone().into()).unwrap();
         // canvas.set_draw_color(sdl2::pixels::Color::RGB(0, 0, 255));

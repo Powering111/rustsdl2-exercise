@@ -1,16 +1,15 @@
 use std::path::Path;
 
-use sdl2::image::LoadTexture;
+use sdl2::mixer::InitFlag;
 use sdl2::{event::Event, pixels::Color};
 
-use font::Font;
-use texture::{Point, Size, Rect};
+use render::font::Font;
+use render::texture::{self, Point, Rect, Size};
 
 extern crate sdl2;
 
 mod error;
-mod font;
-mod texture;
+mod render;
 
 fn main() {
     let sdl_context = sdl2::init().expect("sdl2 initialization failed");
@@ -32,13 +31,34 @@ fn main() {
     let texture_creator = canvas.texture_creator();
 
     let texture0 =
-        texture::Texture::load_from_json(&texture_creator, Path::new("assets/font.json")).unwrap();
+        texture::load_from_json(&texture_creator, Path::new("assets/font.json")).unwrap();
 
-    let texture1 = texture_creator
-        .load_texture(Path::new("assets/human.bmp"))
-        .unwrap();
+    let texture1 =
+        texture::load_from_file(&texture_creator, Path::new("assets/human.bmp")).unwrap();
 
-    let font0 = Font::load(&texture_creator, Path::new("assets/font.json"), "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 !?").unwrap();
+    let font0 = Font::load(
+        &texture_creator,
+        Path::new("assets/font.json"),
+        "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 .,!?",
+    )
+    .unwrap();
+
+    let audio_subsystem = sdl_context.audio().unwrap();
+
+    sdl2::mixer::open_audio(
+        44100,
+        sdl2::mixer::AUDIO_S16LSB,
+        sdl2::mixer::DEFAULT_CHANNELS,
+        64,
+    )
+    .unwrap();
+
+    let mixer_context =
+        sdl2::mixer::init(InitFlag::MP3 | InitFlag::FLAC | InitFlag::MOD | InitFlag::OGG).unwrap();
+
+    sdl2::mixer::allocate_channels(4);
+
+    let audio1 = sdl2::mixer::Music::from_file("assets/sound/sample.mp3").unwrap();
 
     let mut event_pump = sdl_context.event_pump().unwrap();
     let mut frames: u64 = 0;
@@ -48,59 +68,47 @@ fn main() {
     canvas.present();
 
     let mut anim_index = 0;
+    let start_time = std::time::Instant::now();
+    let mut last_elapsed = start_time.elapsed();
     'running: loop {
         for event in event_pump.poll_iter() {
             match event {
                 Event::Quit { .. } => break 'running,
-                Event::KeyDown { .. } => {}
+                Event::KeyDown { .. } => {
+                    audio1.play(1).unwrap();
+                }
                 Event::MouseButtonDown { .. } => {}
                 _ => {}
             }
         }
-        canvas.set_draw_color(Color::RGB(250, (((frames) % 100)+100) as u8, 250));
-        canvas.clear();
-        canvas.set_draw_color(Color::RGB(255, 255, 255));
-        canvas.draw_rect(sdl2::rect::Rect::new(20, 20, 500, 500)).unwrap();
-        canvas
-            .copy(
-                &texture1,
-                sdl2::rect::Rect::new(anim_index * 64, 0, 64, 64),
-                sdl2::rect::Rect::new(20, 20, 500, 500),
-            )
-            .unwrap();
 
-        texture0.draw(
+        canvas.set_draw_color(Color::RGB(
+            250,
+            (((start_time.elapsed().as_millis()) % 1000) / 10 + 100) as u8,
+            250,
+        ));
+        canvas.clear();
+
+        font0.draw(&mut canvas, "hello world!\nlorem ipsum dolor sit amet,\nconsectetur adipisicing elit,\nsed do eiusmod tempor\nut labore et dolore magna aliqua.", Point {x: 30, y: 50}, Size {w: 20, h: 40});
+
+        let elapsed = start_time.elapsed();
+        let fps = 1f32 / (elapsed - last_elapsed).as_secs_f32();
+        last_elapsed = elapsed;
+        font0.draw(
             &mut canvas,
-            texture::Rect {
-                x: 50,
-                y: 50,
-                w: 100,
-                h: 200,
-            },
-            0,
+            format!("{fps:.0} FPS").as_str(),
+            Point { x: 0, y: 0 },
+            Size { w: 32, h: 64 },
         );
-        texture0.draw(
+        texture1.draw(
             &mut canvas,
-            texture::Rect {
-                x: 150,
-                y: 50,
-                w: 100,
-                h: 200,
+            Rect {
+                x: 300,
+                y: 10,
+                w: 500,
+                h: 100,
             },
-            1,
         );
-        texture0.draw(
-            &mut canvas,
-            texture::Rect {
-                x: 250,
-                y: 50,
-                w: 100,
-                h: 200,
-            },
-            2,
-        );
-        
-        font0.draw(&mut canvas, "hello world!", Point {x: 30, y: 450}, Size {w: 50, h: 100});
 
         canvas.present();
 

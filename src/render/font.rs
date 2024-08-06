@@ -1,12 +1,13 @@
 use std::path::Path;
 
-use sdl2::render::{TextureCreator,Canvas};
+use sdl2::render::{Canvas, TextureCreator};
 use sdl2::video::{Window, WindowContext};
 
 use crate::error::Error;
 
-use crate::texture::{Texture, Rect, Point, Size};
+use super::texture::{self, Point, Rect, Size, Texture};
 
+/// Single-textured font.
 pub struct Font<'a> {
     texture: Texture<'a>,
     map: &'static str,
@@ -19,19 +20,32 @@ impl<'a> Font<'a> {
         map: &'static str,
     ) -> Result<Self, Error> {
         Ok(Self {
-            texture: Texture::load_from_json(texture_creator, path)?,
+            texture: texture::load_from_json(texture_creator, path)?,
             map,
         })
     }
 
     pub fn draw(&self, canvas: &mut Canvas<Window>, string: &str, position: Point, scale: Size) {
         let mut x = position.x;
-        let y = position.y;
+        let mut y = position.y;
         string.chars().for_each(|char| {
+            if char == '\n' {
+                x = position.x;
+                y += scale.h as i32;
+            } else {
                 let idx = self.map.find(char).unwrap_or(self.map.len());
-                self.texture.draw(canvas, Rect{ x, y, w: scale.w, h: scale.h }, idx);
+                self.texture.draw_idx(
+                    canvas,
+                    Rect {
+                        x,
+                        y,
+                        w: scale.w,
+                        h: scale.h,
+                    },
+                    idx,
+                );
                 x += scale.w as i32;
             }
-        )
+        })
     }
 }

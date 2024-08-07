@@ -20,7 +20,9 @@ pub fn clip(view_rect: Rect, screen_size: Size) -> Option<Rect> {
         w: screen_size.w / 2,
         h: screen_size.h / 2,
     });
-    transformed_rect.y = screen_size.h - transformed_rect.y;
+
+    // flip vertically to change y-axis direction
+    transformed_rect.y = screen_size.h - transformed_rect.y - transformed_rect.h;
     if transformed_rect.collides(&Rect::from_start_size(Point::default(), screen_size)) {
         Some(transformed_rect)
     } else {

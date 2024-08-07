@@ -20,10 +20,10 @@ pub struct HumanEntity<'a> {
 }
 
 impl<'a> HumanEntity<'a> {
-    pub fn new(texture_manager: &'a TextureManager) -> Self {
+    pub fn new(texture_manager: &'a TextureManager, sprite_name: &'static str, pos: Point) -> Self {
         Self {
-            texture: texture_manager.get("sprite.human"),
-            position: Point { x: 300, y: 350 },
+            texture: texture_manager.get(sprite_name),
+            position: pos,
             anim_idx: 0,
             anim_delay: 20,
         }

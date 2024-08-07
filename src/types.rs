@@ -9,14 +9,14 @@ pub struct Rect {
 }
 
 impl Rect {
-    pub fn point_left_top(&self) -> Point {
+    pub fn point_left_bottom(&self) -> Point {
         Point {
             x: self.x,
             y: self.y,
         }
     }
 
-    pub fn point_right_bottom(&self) -> Point {
+    pub fn point_right_top(&self) -> Point {
         Point {
             x: self.x + self.w as i32,
             y: self.y + self.h as i32,
@@ -74,8 +74,7 @@ impl Rect {
     /// It uses integer division.
     /// use `scale_up` and `scale_down` together to achieve rational number scaling.
     pub fn scale_down(self, scale: i32) -> Self {
-        let size = self.size();
-        Rect::from_center_size(self.point_center(), size / scale)
+        Rect::from_center_size(self.point_center(), self.size() / scale)
     }
 
     pub fn collides(&self, other: &Rect) -> bool {

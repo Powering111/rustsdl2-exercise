@@ -47,6 +47,13 @@ fn main() {
             Path::new("assets/human.json"),
         )
         .expect("loading sprite.human failed");
+    texture_manager
+        .load(
+            &texture_creator,
+            "sprite.test",
+            Path::new("assets/test.json"),
+        )
+        .expect("loading sprite.test failed");
 
     let font0 = load_font(
         texture_manager.get("font"),
@@ -83,7 +90,23 @@ fn main() {
     };
 
     let mut scene0 = Scene::new();
-    scene0.add_entity(game::entity::HumanEntity::new(&texture_manager));
+    for x in 1..10 {
+        for y in 1..10 {
+            scene0.add_entity(game::entity::HumanEntity::new(
+                &texture_manager,
+                "sprite.human",
+                Point {
+                    x: x * 200 - 1000,
+                    y: y * 200 - 1000,
+                },
+            ));
+        }
+    }
+    scene0.add_entity(game::entity::HumanEntity::new(
+        &texture_manager,
+        "sprite.test",
+        Point { x: 0, y: 0 },
+    ));
 
     let mut anim_index = 0;
     let start_time = std::time::Instant::now();

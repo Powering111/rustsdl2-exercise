@@ -38,9 +38,16 @@ impl Camera {
     /// transforms *rect* to the view coordinate
     pub fn transform(&self, rect: Rect) -> Rect {
         let transform_offset: Size = self.center.into();
-        rect.transform((-transform_offset * self.zoom) / 1000)
+        let tmp = rect
+            .transform(-transform_offset)
             .scale_up(self.zoom)
-            .scale_down(1000)
+            .scale_down(1000);
+        Rect {
+            x: (tmp.x * self.zoom) / 1000,
+            y: (tmp.y * self.zoom) / 1000,
+            w: tmp.w,
+            h: tmp.h,
+        }
     }
 }
 
@@ -87,9 +94,13 @@ impl<'a> Scene<'a> {
         self.scene_info.camera.center = pos;
     }
     pub fn add_zoom(&mut self, zoom: i32) {
-        self.scene_info.camera.zoom += zoom * 100;
+        self.scene_info.camera.zoom += zoom * 50;
         if self.scene_info.camera.zoom < 100 {
             self.scene_info.camera.zoom = 100;
         }
+        if self.scene_info.camera.zoom > 10000 {
+            self.scene_info.camera.zoom = 10000;
+        }
+        println!("zoom level: {}", self.scene_info.camera.zoom);
     }
 }

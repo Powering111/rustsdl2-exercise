@@ -119,11 +119,12 @@ impl<'a> TextureInner<'a> {
                 w: (texture_position.spriteSourceSize.w as f32 * width_ratio).round() as i32,
                 h: (texture_position.spriteSourceSize.h as f32 * height_ratio).round() as i32,
             };
-            // Render region rectangle
-            // canvas.set_draw_color(sdl2::pixels::Color::RGB(255, 0, 0));
-            // canvas.draw_rect(position.clone().into()).unwrap();
-            // canvas.set_draw_color(sdl2::pixels::Color::RGB(0, 0, 255));
-            // canvas.draw_rect(to_rect.clone().into()).unwrap();
+
+            // Debug: render region rectangle
+            canvas.set_draw_color(sdl2::pixels::Color::RGB(0, 0, 255));
+            canvas.draw_rect(to_rect.clone().into()).unwrap();
+
+            // draw
             canvas
                 .copy::<sdl2::rect::Rect, sdl2::rect::Rect>(
                     &self.sdl_texture,

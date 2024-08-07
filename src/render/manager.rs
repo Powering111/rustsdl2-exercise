@@ -16,7 +16,12 @@ impl<'a> TextureManager<'a> {
         }
     }
 
-    pub fn load(&mut self, texture_creator: &'a TextureCreator<WindowContext>, name: &'static str, path: &Path) -> Result<(), crate::error::Error> {
+    pub fn load(
+        &mut self,
+        texture_creator: &'a TextureCreator<WindowContext>,
+        name: &'static str,
+        path: &Path,
+    ) -> Result<(), crate::error::Error> {
         let new_texture = if path.extension().is_some_and(|ext| ext == "json") {
             texture::load_from_json(texture_creator, path)?
         } else {

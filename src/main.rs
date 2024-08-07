@@ -2,17 +2,21 @@ use std::cell::RefCell;
 use std::path::Path;
 use std::rc::Rc;
 
+use game::scene::Scene;
 use render::manager::TextureManager;
 use sdl2::mixer::InitFlag;
 use sdl2::{event::Event, pixels::Color};
 
 use render::font::Font;
-use render::texture::{self, Point, Rect, Size};
+use render::texture;
+use types::*;
 
 extern crate sdl2;
 
 mod error;
+mod game;
 mod render;
+mod types;
 
 fn main() {
     let sdl_context = sdl2::init().expect("sdl2 initialization failed");
@@ -34,9 +38,16 @@ fn main() {
     let texture_creator = canvas.texture_creator();
     let mut texture_manager = TextureManager::new();
 
-    texture_manager.load(&texture_creator, "font", Path::new("assets/font.json")).expect("loading font failed");
-    texture_manager.load(&texture_creator, "sprite.human", Path::new("assets/human.bmp")).expect("loading sprite.human failed");
-
+    texture_manager
+        .load(&texture_creator, "font", Path::new("assets/font.json"))
+        .expect("loading font failed");
+    texture_manager
+        .load(
+            &texture_creator,
+            "sprite.human",
+            Path::new("assets/human.json"),
+        )
+        .expect("loading sprite.human failed");
 
     let font0 = Font::load(
         texture_manager.get("font"),
@@ -64,11 +75,12 @@ fn main() {
     let mut event_pump = sdl_context.event_pump().unwrap();
     let mut frames: u64 = 0;
 
-    let texture1 = texture_manager.get("sprite.human");
-
     canvas.set_draw_color(Color::RGB(0, 0, 0));
     canvas.clear();
     canvas.present();
+
+    let mut scene0 = Scene::new();
+    scene0.add_entity(game::entity::HumanEntity::new(&texture_manager));
 
     let mut anim_index = 0;
     let start_time = std::time::Instant::now();
@@ -92,6 +104,9 @@ fn main() {
         ));
         canvas.clear();
 
+        scene0.update();
+        scene0.render(&mut canvas);
+
         font0.draw(&mut canvas, "hello world!\nlorem ipsum dolor sit amet,\nconsectetur adipisicing elit,\nsed do eiusmod tempor\nut labore et dolore magna aliqua.", Point {x: 30, y: 50}, Size {w: 20, h: 40});
 
         let elapsed = start_time.elapsed();
@@ -103,15 +118,15 @@ fn main() {
             Point { x: 0, y: 0 },
             Size { w: 32, h: 64 },
         );
-        texture1.draw(
-            &mut canvas,
-            Rect {
-                x: 300,
-                y: 10,
-                w: 500,
-                h: 100,
-            },
-        );
+        // texture1.draw(
+        //     &mut canvas,
+        //     Rect {
+        //         x: 300,
+        //         y: 10,
+        //         w: 500,
+        //         h: 100,
+        //     },
+        // );
 
         canvas.present();
 

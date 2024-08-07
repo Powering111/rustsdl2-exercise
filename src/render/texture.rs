@@ -3,50 +3,13 @@ use std::path::Path;
 use std::rc::Rc;
 
 use crate::error::Error;
+use crate::types::*;
 
 use sdl2::render::TextureCreator;
 use sdl2::video::{Window, WindowContext};
 use sdl2::{image::LoadTexture, render::Canvas};
 
 use serde::{Deserialize, Serialize};
-
-#[derive(Clone, Copy, Serialize, Deserialize, Debug)]
-pub struct Rect {
-    pub x: i32,
-    pub y: i32,
-    pub w: u32,
-    pub h: u32,
-}
-
-impl std::ops::Add<Size> for Rect {
-    type Output = Rect;
-    fn add(self, rhs: Size) -> Self::Output {
-        Self::Output {
-            x: self.x + rhs.w as i32,
-            y: self.y + rhs.h as i32,
-            w: self.w,
-            h: self.h,
-        }
-    }
-}
-
-impl Into<sdl2::rect::Rect> for Rect {
-    fn into(self) -> sdl2::rect::Rect {
-        sdl2::rect::Rect::new(self.x, self.y, self.w, self.h)
-    }
-}
-
-#[derive(Clone, Copy, Serialize, Deserialize, Debug)]
-pub struct Point {
-    pub x: i32,
-    pub y: i32,
-}
-
-#[derive(Clone, Copy, Serialize, Deserialize, Debug)]
-pub struct Size {
-    pub w: u32,
-    pub h: u32,
-}
 
 #[allow(non_snake_case)]
 #[derive(Serialize, Deserialize, Debug)]
@@ -62,12 +25,22 @@ struct FileMetadata {
     size: Size,
 }
 
+/// Requirement for the sprite sheet JSON file
+/// It needs two key:
+/// - *frames* : array of subtexture's position
+///     each contain the key *frame*, which represents the rectangle.
+///     - *frame* : composed of *x*, *y*, *w*, *h*
+/// - *meta* : metadata for the target image file
+/// For more detail, see example at `assets/font.json`.
 #[derive(Serialize, Deserialize, Debug)]
 struct Metadata {
     frames: Vec<SubTexturePosition>,
     meta: FileMetadata,
 }
 
+/// Basic texture abstraction.
+/// Use this type to load, store and draw texture.
+/// It must live within the range of the TextureCreator that created this texture.
 pub type Texture<'a> = Rc<TextureInner<'a>>;
 
 /// sdl2 texture and its subtexture positions
@@ -76,7 +49,7 @@ pub struct TextureInner<'a> {
     positions: Vec<SubTexturePosition>,
 }
 
-/// load image from JSON metadata
+/// load image texture from JSON metadata
 /// the JSON metadata may be generated from Aseprite.
 pub fn load_from_json<'a>(
     texture_creator: &'a TextureCreator<WindowContext>,
@@ -96,6 +69,7 @@ pub fn load_from_json<'a>(
     }))
 }
 
+/// load image texture that does not have JSON metadata.
 pub fn load_from_file<'a>(
     texture_creator: &'a TextureCreator<WindowContext>,
     path: &Path,
@@ -110,35 +84,56 @@ pub fn load_from_file<'a>(
 }
 
 impl<'a> TextureInner<'a> {
+    /// Draw texture to the canvas.
+    /// - *canvas* : the canvas to draw.
+    /// - *rect* : position and size to be drawn in screen, pixel.
     pub fn draw(&self, canvas: &mut Canvas<Window>, rect: Rect) {
         canvas
             .copy::<Option<_>, sdl2::rect::Rect>(&self.sdl_texture, None, rect.into())
             .unwrap();
     }
 
+    /// Draw texture to the canvas.
+    /// It is automatically trimmed and stretched.
+    /// - *canvas* : the canvas to draw.
+    /// - *rect* : position and size to be drawn in screen, pixel.
+    /// - *idx* : the frame index to draw. starts from 0.
     pub fn draw_idx(&self, canvas: &mut Canvas<Window>, rect: Rect, idx: usize) {
-        let texture_position: &SubTexturePosition = self.positions.get(idx).unwrap();
-        let from_rect: Rect = texture_position.frame;
+        if self.positions.is_empty() {
+            self.draw(canvas, rect);
+        } else {
+            let texture_position: &SubTexturePosition = self
+                .positions
+                .get(idx)
+                .expect(format!("texture index {idx:} not found").as_str());
+            let from_rect: Rect = texture_position.frame;
 
-        let width_ratio: f32 = rect.w as f32 / texture_position.sourceSize.w as f32;
-        let height_ratio: f32 = rect.h as f32 / texture_position.sourceSize.h as f32;
-        let to_rect = Rect {
-            x: rect.x + (texture_position.spriteSourceSize.x as f32 * width_ratio).round() as i32,
-            y: rect.y + (texture_position.spriteSourceSize.y as f32 * height_ratio).round() as i32,
-            w: (texture_position.spriteSourceSize.w as f32 * width_ratio).round() as u32,
-            h: (texture_position.spriteSourceSize.h as f32 * height_ratio).round() as u32,
-        };
-        // Render range rectangle
-        // canvas.set_draw_color(sdl2::pixels::Color::RGB(255, 0, 0));
-        // canvas.draw_rect(position.clone().into()).unwrap();
-        // canvas.set_draw_color(sdl2::pixels::Color::RGB(0, 0, 255));
-        // canvas.draw_rect(to_rect.clone().into()).unwrap();
-        canvas
-            .copy::<sdl2::rect::Rect, sdl2::rect::Rect>(
-                &self.sdl_texture,
-                from_rect.into(),
-                to_rect.into(),
-            )
-            .unwrap();
+            let width_ratio: f32 = rect.w as f32 / texture_position.sourceSize.w as f32;
+            let height_ratio: f32 = rect.h as f32 / texture_position.sourceSize.h as f32;
+            let to_rect = Rect {
+                x: rect.x
+                    + (texture_position.spriteSourceSize.x as f32 * width_ratio).round() as i32,
+                y: rect.y
+                    + (texture_position.spriteSourceSize.y as f32 * height_ratio).round() as i32,
+                w: (texture_position.spriteSourceSize.w as f32 * width_ratio).round() as u32,
+                h: (texture_position.spriteSourceSize.h as f32 * height_ratio).round() as u32,
+            };
+            // Render region rectangle
+            // canvas.set_draw_color(sdl2::pixels::Color::RGB(255, 0, 0));
+            // canvas.draw_rect(position.clone().into()).unwrap();
+            // canvas.set_draw_color(sdl2::pixels::Color::RGB(0, 0, 255));
+            // canvas.draw_rect(to_rect.clone().into()).unwrap();
+            canvas
+                .copy::<sdl2::rect::Rect, sdl2::rect::Rect>(
+                    &self.sdl_texture,
+                    from_rect.into(),
+                    to_rect.into(),
+                )
+                .unwrap();
+        }
+    }
+
+    pub fn len(&self) -> usize {
+        self.positions.len()
     }
 }

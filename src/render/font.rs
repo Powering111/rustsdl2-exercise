@@ -1,12 +1,10 @@
-use std::path::Path;
-
-use sdl2::render::{Canvas, TextureCreator};
-use sdl2::video::{Window, WindowContext};
+use sdl2::render::Canvas;
+use sdl2::video::Window;
 
 use crate::error::Error;
 
-use super::manager::TextureManager;
-use super::texture::{self, Point, Rect, Size, Texture};
+use crate::texture::Texture;
+use crate::types::*;
 
 /// Single-textured font.
 pub struct Font<'a> {
@@ -15,14 +13,8 @@ pub struct Font<'a> {
 }
 
 impl<'a> Font<'a> {
-    pub fn load(
-        texture: Texture<'a>,
-        map: &'static str,
-    ) -> Result<Self, Error> {
-        Ok(Self {
-            texture,
-            map,
-        })
+    pub fn load(texture: Texture<'a>, map: &'static str) -> Result<Self, Error> {
+        Ok(Self { texture, map })
     }
 
     pub fn draw(&self, canvas: &mut Canvas<Window>, string: &str, position: Point, scale: Size) {

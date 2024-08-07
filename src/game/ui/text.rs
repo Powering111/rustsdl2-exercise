@@ -8,7 +8,7 @@ use crate::game::ui::UIElement;
 pub struct TextElement<'a> {
     font: Font<'a>,
     text: String,
-    pos: Point,
+    pos: Vec2,
 }
 
 impl<'a> UIElement for TextElement<'a> {

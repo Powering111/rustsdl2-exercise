@@ -9,57 +9,57 @@ pub struct Rect {
 }
 
 impl Rect {
-    pub fn point_left_bottom(&self) -> Point {
-        Point {
+    pub fn point_left_bottom(&self) -> Vec2 {
+        Vec2 {
             x: self.x,
             y: self.y,
         }
     }
 
-    pub fn point_right_top(&self) -> Point {
-        Point {
+    pub fn point_right_top(&self) -> Vec2 {
+        Vec2 {
             x: self.x + self.w as i32,
             y: self.y + self.h as i32,
         }
     }
 
     /// Get the center point of the rect.
-    pub fn point_center(&self) -> Point {
-        Point {
+    pub fn point_center(&self) -> Vec2 {
+        Vec2 {
             x: self.x + (self.w / 2) as i32,
             y: self.y + (self.h / 2) as i32,
         }
     }
 
-    pub fn size(&self) -> Size {
-        Size {
-            w: self.w,
-            h: self.h,
+    pub fn size(&self) -> Vec2 {
+        Vec2 {
+            x: self.w,
+            y: self.h,
         }
     }
 
-    pub fn from_start_size(start: Point, size: Size) -> Self {
+    pub fn from_start_size(start: Vec2, size: Vec2) -> Self {
         Self {
             x: start.x,
             y: start.y,
-            w: size.w,
-            h: size.h,
+            w: size.x,
+            h: size.y,
         }
     }
 
-    pub fn from_center_size(center: Point, size: Size) -> Self {
+    pub fn from_center_size(center: Vec2, size: Vec2) -> Self {
         Self {
-            x: center.x - (size.w / 2) as i32,
-            y: center.y - (size.h / 2) as i32,
-            w: size.w,
-            h: size.h,
+            x: center.x - (size.x / 2) as i32,
+            y: center.y - (size.y / 2) as i32,
+            w: size.x,
+            h: size.y,
         }
     }
 
-    pub fn transform(self, offset: Size) -> Self {
+    pub fn transform(self, offset: Vec2) -> Self {
         Self {
-            x: self.x + offset.w as i32,
-            y: self.y + offset.h as i32,
+            x: self.x + offset.x,
+            y: self.y + offset.y,
             w: self.w,
             h: self.h,
         }
@@ -92,76 +92,80 @@ impl Into<sdl2::rect::Rect> for Rect {
 }
 
 #[derive(Clone, Copy, Serialize, Deserialize, Debug, Default)]
-pub struct Point {
+pub struct Vec2 {
     pub x: i32,
     pub y: i32,
 }
 
-impl Into<Size> for Point {
-    fn into(self) -> Size {
-        Size {
-            w: self.x,
-            h: self.y,
+impl Into<sdl2::rect::Point> for Vec2 {
+    fn into(self) -> sdl2::rect::Point {
+        sdl2::rect::Point::new(self.x, self.y)
+    }
+}
+
+impl std::ops::Add<Vec2> for Vec2 {
+    type Output = Vec2;
+
+    fn add(self, rhs: Vec2) -> Self::Output {
+        Vec2 {
+            x: self.x + rhs.x,
+            y: self.y + rhs.y,
         }
     }
 }
 
-impl std::ops::Add<Size> for Point {
-    type Output = Point;
+impl std::ops::Sub<Vec2> for Vec2 {
+    type Output = Vec2;
 
-    fn add(self, rhs: Size) -> Self::Output {
-        Point {
-            x: self.x + rhs.w,
-            y: self.y + rhs.h,
+    fn sub(self, rhs: Vec2) -> Self::Output {
+        Vec2 {
+            x: self.x - rhs.x,
+            y: self.y - rhs.y,
         }
     }
 }
 
-#[derive(Clone, Copy, Serialize, Deserialize, Debug, Default)]
-pub struct Size {
-    pub w: i32,
-    pub h: i32,
-}
-
-impl Into<Point> for Size {
-    fn into(self) -> Point {
-        Point {
-            x: self.w,
-            y: self.h,
-        }
-    }
-}
-
-impl std::ops::Neg for Size {
-    type Output = Size;
+impl std::ops::Neg for Vec2 {
+    type Output = Vec2;
 
     fn neg(self) -> Self::Output {
-        Size {
-            w: -self.w,
-            h: -self.h,
+        Vec2 {
+            x: -self.x,
+            y: -self.y,
         }
     }
 }
 
-impl std::ops::Mul<i32> for Size {
-    type Output = Size;
+impl std::ops::Mul<i32> for Vec2 {
+    type Output = Vec2;
 
     fn mul(self, rhs: i32) -> Self::Output {
-        Size {
-            w: self.w * rhs,
-            h: self.h * rhs,
+        Vec2 {
+            x: self.x * rhs,
+            y: self.y * rhs,
         }
     }
 }
 
-impl std::ops::Div<i32> for Size {
-    type Output = Size;
+impl std::ops::Mul<f32> for Vec2 {
+    type Output = Vec2;
+
+    fn mul(self, rhs: f32) -> Self::Output {
+        Vec2 {
+            x: (self.x as f32 * rhs) as i32,
+            y: (self.y as f32 * rhs) as i32,
+        }
+    }
+}
+
+impl std::ops::Div<i32> for Vec2 {
+    type Output = Vec2;
 
     // integer division for each component
     fn div(self, rhs: i32) -> Self::Output {
-        Size {
-            w: self.w / rhs,
-            h: self.h / rhs,
+        Vec2 {
+            x: self.x / rhs,
+            y: self.y / rhs,
         }
     }
 }

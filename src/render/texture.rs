@@ -12,6 +12,12 @@ use sdl2::video::WindowContext;
 
 use serde::{Deserialize, Serialize};
 
+#[derive(Serialize, Deserialize, Debug)]
+struct Size {
+    w: i32,
+    h: i32,
+}
+
 #[allow(non_snake_case)]
 #[derive(Serialize, Deserialize, Debug)]
 struct SubTexturePosition {

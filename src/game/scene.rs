@@ -15,21 +15,21 @@ pub struct SceneInfo {
 #[derive(Clone, Copy)]
 pub struct Camera {
     /// world space coordinate of the camera.
-    center: Point,
+    center: Vec2,
 
-    /// 1000 * zoom level of the camera.
+    /// zoom level of the camera.
     ///
-    /// `world : view = 1000 : *scale*`
+    /// `world : view = 1: *scale*`
     ///
-    /// which means 1 unit in world space become *scale*/1000 pixels on screen.
-    zoom: i32,
+    /// which means 1 unit in world space become *scale* pixels on screen.
+    zoom: f32,
 }
 
 impl Default for Camera {
     fn default() -> Self {
         Self {
-            center: Point { x: 0, y: 0 },
-            zoom: 1000,
+            center: Vec2 { x: 0, y: 0 },
+            zoom: 0.5,
         }
     }
 }
@@ -37,17 +37,10 @@ impl Default for Camera {
 impl Camera {
     /// transforms *rect* to the view coordinate
     pub fn transform(&self, rect: Rect) -> Rect {
-        let transform_offset: Size = self.center.into();
-        let tmp = rect
-            .transform(-transform_offset)
-            .scale_up(self.zoom)
-            .scale_down(1000);
-        Rect {
-            x: (tmp.x * self.zoom) / 1000,
-            y: (tmp.y * self.zoom) / 1000,
-            w: tmp.w,
-            h: tmp.h,
-        }
+        let object_center = rect.point_center();
+        let transformed_center = (object_center - self.center) * self.zoom;
+        let transformed_size = rect.size() * self.zoom;
+        Rect::from_center_size(transformed_center, transformed_size)
     }
 }
 
@@ -84,23 +77,53 @@ impl<'a> Scene<'a> {
         for ui in self.ui.iter() {
             ui.draw(canvas, render_info, &self.scene_info);
         }
+
+        // Debug: crosshair at the center
+        let center = Vec2 {
+            x: render_info.screen_size.x / 2,
+            y: render_info.screen_size.y / 2,
+        };
+        canvas.set_draw_color(sdl2::pixels::Color::RGB(255, 0, 255));
+        canvas
+            .draw_line(
+                Vec2 {
+                    x: center.x - 10,
+                    y: center.y,
+                },
+                Vec2 {
+                    x: center.x + 10,
+                    y: center.y,
+                },
+            )
+            .unwrap();
+        canvas
+            .draw_line(
+                Vec2 {
+                    x: center.x,
+                    y: center.y - 10,
+                },
+                Vec2 {
+                    x: center.x,
+                    y: center.y + 10,
+                },
+            )
+            .unwrap();
     }
 
     // for debug
-    pub fn get_position(&self) -> Point {
+    pub fn get_position(&self) -> Vec2 {
         self.scene_info.camera.center
     }
-    pub fn set_position(&mut self, pos: Point) {
+    pub fn set_position(&mut self, pos: Vec2) {
         self.scene_info.camera.center = pos;
     }
-    pub fn add_zoom(&mut self, zoom: i32) {
-        self.scene_info.camera.zoom += zoom * 50;
-        if self.scene_info.camera.zoom < 100 {
-            self.scene_info.camera.zoom = 100;
+    pub fn add_zoom(&mut self, zoom: f32) {
+        self.scene_info.camera.zoom *= 1.05f32.powf(zoom);
+        if self.scene_info.camera.zoom < 0.1 {
+            self.scene_info.camera.zoom = 0.1;
         }
-        if self.scene_info.camera.zoom > 10000 {
-            self.scene_info.camera.zoom = 10000;
+        if self.scene_info.camera.zoom > 1.0 {
+            self.scene_info.camera.zoom = 1.0;
         }
-        println!("zoom level: {}", self.scene_info.camera.zoom);
     }
 }

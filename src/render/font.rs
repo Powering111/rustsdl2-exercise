@@ -20,13 +20,13 @@ pub fn load_font<'a>(texture: Texture<'a>, map: &'static str) -> Result<Font<'a>
 }
 
 impl<'a> FontInner<'a> {
-    pub fn draw(&self, canvas: Canvas, string: &str, position: Point, scale: Size) {
+    pub fn draw(&self, canvas: Canvas, string: &str, position: Vec2, scale: Vec2) {
         let mut x = position.x;
         let mut y = position.y;
         string.chars().for_each(|char| {
             if char == '\n' {
                 x = position.x;
-                y += scale.h as i32;
+                y += scale.y as i32;
             } else {
                 let idx = self.map.find(char).unwrap_or(self.map.len());
                 self.texture.draw_idx(
@@ -34,12 +34,12 @@ impl<'a> FontInner<'a> {
                     Rect {
                         x,
                         y,
-                        w: scale.w,
-                        h: scale.h,
+                        w: scale.x,
+                        h: scale.y,
                     },
                     idx,
                 );
-                x += scale.w as i32;
+                x += scale.x as i32;
             }
         })
     }

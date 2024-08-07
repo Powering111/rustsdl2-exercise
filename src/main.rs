@@ -24,6 +24,8 @@ fn main() {
     let window = video_subsystem
         .window("example title", 800, 600)
         .position_centered()
+        .allow_highdpi()
+        .resizable()
         .build()
         .unwrap();
 
@@ -82,11 +84,12 @@ fn main() {
     let mut frames: u64 = 0;
 
     let (window_width, window_height) = canvas.window().size();
-    let render_info = RenderInfo {
-        screen_size: Size {
-            w: window_width as i32,
-            h: window_height as i32,
+    let mut render_info = RenderInfo {
+        screen_size: Vec2 {
+            x: window_width as i32,
+            y: window_height as i32,
         },
+        frame: 0,
     };
 
     let mut scene0 = Scene::new();
@@ -95,7 +98,7 @@ fn main() {
             scene0.add_entity(game::entity::HumanEntity::new(
                 &texture_manager,
                 "sprite.human",
-                Point {
+                Vec2 {
                     x: x * 200 - 1000,
                     y: y * 200 - 1000,
                 },
@@ -105,7 +108,7 @@ fn main() {
     scene0.add_entity(game::entity::HumanEntity::new(
         &texture_manager,
         "sprite.test",
-        Point { x: 0, y: 0 },
+        Vec2 { x: 0, y: 0 },
     ));
 
     let mut anim_index = 0;
@@ -122,6 +125,12 @@ fn main() {
         for event in event_pump.poll_iter() {
             match event {
                 Event::Quit { .. } => break 'running,
+                Event::Window { win_event, .. } => match win_event {
+                    sdl2::event::WindowEvent::Resized(x, y) => {
+                        render_info.screen_size = Vec2 { x, y }
+                    }
+                    _ => (),
+                },
                 Event::KeyDown { keycode, .. } => match keycode {
                     Some(keycode) => match keycode {
                         Keycode::SPACE => audio1.play(1).unwrap(),
@@ -129,8 +138,8 @@ fn main() {
                     },
                     None => (),
                 },
-                Event::MouseWheel { y, .. } => {
-                    scene0.add_zoom(y);
+                Event::MouseWheel { precise_y, .. } => {
+                    scene0.add_zoom(precise_y);
                 }
                 Event::MouseButtonDown { .. } => {}
                 _ => {}
@@ -143,10 +152,10 @@ fn main() {
             .filter_map(Keycode::from_scancode)
         {
             match keycode {
-                Keycode::W => scene0.set_position(scene0.get_position() + Size { w: 0, h: 10 }),
-                Keycode::A => scene0.set_position(scene0.get_position() + Size { w: -10, h: 0 }),
-                Keycode::S => scene0.set_position(scene0.get_position() + Size { w: 0, h: -10 }),
-                Keycode::D => scene0.set_position(scene0.get_position() + Size { w: 10, h: 0 }),
+                Keycode::W => scene0.set_position(scene0.get_position() + Vec2 { x: 0, y: 10 }),
+                Keycode::A => scene0.set_position(scene0.get_position() + Vec2 { x: -10, y: 0 }),
+                Keycode::S => scene0.set_position(scene0.get_position() + Vec2 { x: 0, y: -10 }),
+                Keycode::D => scene0.set_position(scene0.get_position() + Vec2 { x: 10, y: 0 }),
                 _ => (),
             }
         }
@@ -166,7 +175,7 @@ fn main() {
         scene0.render(&mut canvas, &render_info);
 
         // debug
-        font0.draw(&mut canvas, "hello world!\nlorem ipsum dolor sit amet,\nconsectetur adipisicing elit,\nsed do eiusmod tempor\nut labore et dolore magna aliqua.", Point {x: 30, y: 50}, Size {w: 20, h: 40});
+        font0.draw(&mut canvas, "hello world!\nlorem ipsum dolor sit amet,\nconsectetur adipisicing elit,\nsed do eiusmod tempor\nut labore et dolore magna aliqua.", Vec2 {x: 30, y: 50}, Vec2 {x: 20, y: 40});
 
         let elapsed = start_time.elapsed();
         let fps = 1f32 / (elapsed - last_elapsed).as_secs_f32();
@@ -174,17 +183,13 @@ fn main() {
         font0.draw(
             &mut canvas,
             format!("{fps:.0} FPS").as_str(),
-            Point { x: 0, y: 0 },
-            Size { w: 32, h: 64 },
+            Vec2 { x: 0, y: 0 },
+            Vec2 { x: 32, y: 64 },
         );
 
         // show rendered screen
         canvas.present();
 
-        frames += 1;
-
-        if frames % 15 == 0 {
-            anim_index = (anim_index + 1) % 6;
-        }
+        render_info.frame += 1;
     }
 }

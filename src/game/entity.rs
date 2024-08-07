@@ -1,12 +1,14 @@
 use crate::render::manager::TextureManager;
 use crate::render::texture::Texture;
+use crate::render::Canvas;
 use crate::types::*;
-use sdl2::render::Canvas;
-use sdl2::video::Window;
+
+use crate::game::scene::SceneInfo;
+use crate::render::RenderInfo;
 
 pub trait Entity {
     fn update(&mut self);
-    fn draw(&self, canvas: &mut Canvas<Window>);
+    fn draw(&self, canvas: Canvas, render_info: &RenderInfo, scene_info: &SceneInfo);
 }
 
 /// Human entity for test
@@ -38,11 +40,15 @@ impl<'a> Entity for HumanEntity<'a> {
         }
     }
 
-    fn draw(&self, canvas: &mut Canvas<Window>) {
-        self.texture.draw_idx(
-            canvas,
-            Rect::from_center_size(self.position, Size { w: 200, h: 200 }),
-            self.anim_idx,
-        );
+    fn draw(&self, canvas: Canvas, render_info: &RenderInfo, scene_info: &SceneInfo) {
+        let world_rect = Rect::from_center_size(self.position, Size { w: 200, h: 200 });
+        let view_rect = scene_info.camera.transform(world_rect);
+
+        match crate::render::clip(view_rect, render_info.screen_size) {
+            Some(screen_rect) => {
+                self.texture.draw_idx(canvas, screen_rect, self.anim_idx);
+            }
+            None => (),
+        }
     }
 }

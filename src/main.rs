@@ -1,14 +1,13 @@
-use std::cell::RefCell;
 use std::path::Path;
-use std::rc::Rc;
 
 use game::scene::Scene;
 use render::manager::TextureManager;
+use sdl2::keyboard::Keycode;
 use sdl2::mixer::InitFlag;
 use sdl2::{event::Event, pixels::Color};
 
-use render::font::Font;
-use render::texture;
+use render::font::load_font;
+use render::{texture, RenderInfo};
 use types::*;
 
 extern crate sdl2;
@@ -49,7 +48,7 @@ fn main() {
         )
         .expect("loading sprite.human failed");
 
-    let font0 = Font::load(
+    let font0 = load_font(
         texture_manager.get("font"),
         "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 .,!?",
     )
@@ -75,9 +74,13 @@ fn main() {
     let mut event_pump = sdl_context.event_pump().unwrap();
     let mut frames: u64 = 0;
 
-    canvas.set_draw_color(Color::RGB(0, 0, 0));
-    canvas.clear();
-    canvas.present();
+    let (window_width, window_height) = canvas.window().size();
+    let render_info = RenderInfo {
+        screen_size: Size {
+            w: window_width as i32,
+            h: window_height as i32,
+        },
+    };
 
     let mut scene0 = Scene::new();
     scene0.add_entity(game::entity::HumanEntity::new(&texture_manager));
@@ -85,18 +88,47 @@ fn main() {
     let mut anim_index = 0;
     let start_time = std::time::Instant::now();
     let mut last_elapsed = start_time.elapsed();
+
+    // init canvas
+    canvas.set_draw_color(Color::RGB(0, 0, 0));
+    canvas.clear();
+
+    canvas.present();
+
     'running: loop {
         for event in event_pump.poll_iter() {
             match event {
                 Event::Quit { .. } => break 'running,
-                Event::KeyDown { .. } => {
-                    audio1.play(1).unwrap();
+                Event::KeyDown { keycode, .. } => match keycode {
+                    Some(keycode) => match keycode {
+                        Keycode::SPACE => audio1.play(1).unwrap(),
+                        _ => (),
+                    },
+                    None => (),
+                },
+                Event::MouseWheel { y, .. } => {
+                    scene0.add_zoom(y);
                 }
                 Event::MouseButtonDown { .. } => {}
                 _ => {}
             }
         }
 
+        for keycode in event_pump
+            .keyboard_state()
+            .pressed_scancodes()
+            .filter_map(Keycode::from_scancode)
+        {
+            match keycode {
+                Keycode::W => scene0.set_position(scene0.get_position() + Size { w: 0, h: 10 }),
+                Keycode::A => scene0.set_position(scene0.get_position() + Size { w: -10, h: 0 }),
+                Keycode::S => scene0.set_position(scene0.get_position() + Size { w: 0, h: -10 }),
+                Keycode::D => scene0.set_position(scene0.get_position() + Size { w: 10, h: 0 }),
+                _ => (),
+            }
+        }
+
+        // clear canvas
         canvas.set_draw_color(Color::RGB(
             250,
             (((start_time.elapsed().as_millis()) % 1000) / 10 + 100) as u8,
@@ -104,9 +136,13 @@ fn main() {
         ));
         canvas.clear();
 
+        // update game
         scene0.update();
-        scene0.render(&mut canvas);
 
+        // render the scene
+        scene0.render(&mut canvas, &render_info);
+
+        // debug
         font0.draw(&mut canvas, "hello world!\nlorem ipsum dolor sit amet,\nconsectetur adipisicing elit,\nsed do eiusmod tempor\nut labore et dolore magna aliqua.", Point {x: 30, y: 50}, Size {w: 20, h: 40});
 
         let elapsed = start_time.elapsed();
@@ -118,16 +154,8 @@ fn main() {
             Point { x: 0, y: 0 },
             Size { w: 32, h: 64 },
         );
-        // texture1.draw(
-        //     &mut canvas,
-        //     Rect {
-        //         x: 300,
-        //         y: 10,
-        //         w: 500,
-        //         h: 100,
-        //     },
-        // );
 
+        // show rendered screen
         canvas.present();
 
         frames += 1;

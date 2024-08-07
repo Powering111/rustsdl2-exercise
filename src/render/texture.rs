@@ -3,11 +3,12 @@ use std::path::Path;
 use std::rc::Rc;
 
 use crate::error::Error;
+use crate::render::Canvas;
 use crate::types::*;
 
+use sdl2::image::LoadTexture;
 use sdl2::render::TextureCreator;
-use sdl2::video::{Window, WindowContext};
-use sdl2::{image::LoadTexture, render::Canvas};
+use sdl2::video::WindowContext;
 
 use serde::{Deserialize, Serialize};
 
@@ -87,7 +88,7 @@ impl<'a> TextureInner<'a> {
     /// Draw texture to the canvas.
     /// - *canvas* : the canvas to draw.
     /// - *rect* : position and size to be drawn in screen, pixel.
-    pub fn draw(&self, canvas: &mut Canvas<Window>, rect: Rect) {
+    pub fn draw(&self, canvas: Canvas, rect: Rect) {
         canvas
             .copy::<Option<_>, sdl2::rect::Rect>(&self.sdl_texture, None, rect.into())
             .unwrap();
@@ -98,7 +99,7 @@ impl<'a> TextureInner<'a> {
     /// - *canvas* : the canvas to draw.
     /// - *rect* : position and size to be drawn in screen, pixel.
     /// - *idx* : the frame index to draw. starts from 0.
-    pub fn draw_idx(&self, canvas: &mut Canvas<Window>, rect: Rect, idx: usize) {
+    pub fn draw_idx(&self, canvas: Canvas, rect: Rect, idx: usize) {
         if self.positions.is_empty() {
             self.draw(canvas, rect);
         } else {
@@ -115,8 +116,8 @@ impl<'a> TextureInner<'a> {
                     + (texture_position.spriteSourceSize.x as f32 * width_ratio).round() as i32,
                 y: rect.y
                     + (texture_position.spriteSourceSize.y as f32 * height_ratio).round() as i32,
-                w: (texture_position.spriteSourceSize.w as f32 * width_ratio).round() as u32,
-                h: (texture_position.spriteSourceSize.h as f32 * height_ratio).round() as u32,
+                w: (texture_position.spriteSourceSize.w as f32 * width_ratio).round() as i32,
+                h: (texture_position.spriteSourceSize.h as f32 * height_ratio).round() as i32,
             };
             // Render region rectangle
             // canvas.set_draw_color(sdl2::pixels::Color::RGB(255, 0, 0));

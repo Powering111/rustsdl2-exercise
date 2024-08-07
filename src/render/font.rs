@@ -1,23 +1,26 @@
-use sdl2::render::Canvas;
-use sdl2::video::Window;
+use std::rc::Rc;
+
+use crate::render::Canvas;
 
 use crate::error::Error;
 
 use crate::texture::Texture;
 use crate::types::*;
 
+pub type Font<'a> = Rc<FontInner<'a>>;
+
 /// Single-textured font.
-pub struct Font<'a> {
+pub struct FontInner<'a> {
     texture: Texture<'a>,
     map: &'static str,
 }
 
-impl<'a> Font<'a> {
-    pub fn load(texture: Texture<'a>, map: &'static str) -> Result<Self, Error> {
-        Ok(Self { texture, map })
-    }
+pub fn load_font<'a>(texture: Texture<'a>, map: &'static str) -> Result<Font<'a>, Error> {
+    Ok(Rc::new(FontInner { texture, map }))
+}
 
-    pub fn draw(&self, canvas: &mut Canvas<Window>, string: &str, position: Point, scale: Size) {
+impl<'a> FontInner<'a> {
+    pub fn draw(&self, canvas: Canvas, string: &str, position: Point, scale: Size) {
         let mut x = position.x;
         let mut y = position.y;
         string.chars().for_each(|char| {

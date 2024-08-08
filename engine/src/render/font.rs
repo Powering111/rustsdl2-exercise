@@ -4,22 +4,22 @@ use crate::render::Canvas;
 
 use crate::error::Error;
 
-use crate::texture::Texture;
+use crate::render::texture::Texture;
 use crate::types::*;
 
-pub type Font<'a> = Rc<FontInner<'a>>;
+pub type Font = Rc<FontInner>;
 
 /// Single-textured font.
-pub struct FontInner<'a> {
-    texture: Texture<'a>,
+pub struct FontInner {
+    texture: Texture,
     map: &'static str,
 }
 
-pub fn load_font<'a>(texture: Texture<'a>, map: &'static str) -> Result<Font<'a>, Error> {
+pub fn load_font(texture: Texture, map: &'static str) -> Result<Font, Error> {
     Ok(Rc::new(FontInner { texture, map }))
 }
 
-impl<'a> FontInner<'a> {
+impl FontInner {
     pub fn draw(&self, canvas: Canvas, string: &str, position: Vec2, scale: Vec2) {
         let mut x = position.x;
         let mut y = position.y;

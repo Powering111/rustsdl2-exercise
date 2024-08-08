@@ -12,6 +12,7 @@ use sdl2::video::WindowContext;
 
 use serde::{Deserialize, Serialize};
 
+
 #[derive(Serialize, Deserialize, Debug)]
 struct Size {
     w: i32,
@@ -48,20 +49,20 @@ struct Metadata {
 /// Basic texture abstraction.
 /// Use this type to load, store and draw texture.
 /// It must live within the range of the TextureCreator that created this texture.
-pub type Texture<'a> = Rc<TextureInner<'a>>;
+pub type Texture = Rc<TextureInner>;
 
 /// sdl2 texture and its subtexture positions
-pub struct TextureInner<'a> {
-    sdl_texture: sdl2::render::Texture<'a>,
+pub struct TextureInner {
+    sdl_texture: Rc<sdl2::render::Texture>,
     positions: Vec<SubTexturePosition>,
 }
 
 /// load image texture from JSON metadata
 /// the JSON metadata may be generated from Aseprite.
-pub fn load_from_json<'a>(
-    texture_creator: &'a TextureCreator<WindowContext>,
+pub fn load_from_json(
+    texture_creator: &TextureCreator<WindowContext>,
     path: &Path,
-) -> Result<Texture<'a>, Error> {
+) -> Result<Texture, Error> {
     let meta_str = fs::read_to_string(path).map_err(|_| Error::FileReadFailure)?;
     let metadata: Metadata =
         serde_json::from_str(meta_str.as_str()).map_err(|_| Error::JSONParseFailure)?;
@@ -71,26 +72,26 @@ pub fn load_from_json<'a>(
         .map_err(|_| Error::TextureCreateFailure)?;
 
     Ok(Rc::new(TextureInner {
-        sdl_texture,
+        sdl_texture: Rc::new(sdl_texture),
         positions: metadata.frames,
     }))
 }
 
 /// load image texture that does not have JSON metadata.
-pub fn load_from_file<'a>(
-    texture_creator: &'a TextureCreator<WindowContext>,
+pub fn load_from_file(
+    texture_creator: &TextureCreator<WindowContext>,
     path: &Path,
-) -> Result<Texture<'a>, Error> {
+) -> Result<Texture, Error> {
     let sdl_texture = texture_creator
         .load_texture(path)
         .map_err(|_| Error::TextureCreateFailure)?;
     Ok(Rc::new(TextureInner {
-        sdl_texture,
+        sdl_texture: Rc::new(sdl_texture),
         positions: vec![],
     }))
 }
 
-impl<'a> TextureInner<'a> {
+impl TextureInner {
     /// Draw texture to the canvas.
     /// - *canvas* : the canvas to draw.
     /// - *rect* : position and size to be drawn in screen, pixel.

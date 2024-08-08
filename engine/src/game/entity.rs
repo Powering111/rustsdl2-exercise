@@ -1,28 +1,28 @@
 use crate::render::manager::TextureManager;
 use crate::render::texture::Texture;
 use crate::render::Canvas;
-use crate::types::*;
+use crate::{types::*, Renderer};
 
 use crate::game::scene::SceneInfo;
 use crate::render::RenderInfo;
 
 pub trait Entity {
     fn update(&mut self);
-    fn draw(&self, canvas: Canvas, render_info: &RenderInfo, scene_info: &SceneInfo);
+    fn draw(&self, renderer: &mut Renderer, scene_info: &SceneInfo);
 }
 
 /// Human entity for test
-pub struct HumanEntity<'a> {
-    texture: Texture<'a>,
+pub struct HumanEntity {
+    texture: Texture,
     position: Vec2,
     anim_idx: usize,
     anim_delay: usize,
 }
 
-impl<'a> HumanEntity<'a> {
-    pub fn new(texture_manager: &'a TextureManager, sprite_name: &'static str, pos: Vec2) -> Self {
+impl HumanEntity {
+    pub fn new(texture: Texture, pos: Vec2) -> Self {
         Self {
-            texture: texture_manager.get(sprite_name),
+            texture,
             position: pos,
             anim_idx: 0,
             anim_delay: 20,
@@ -30,7 +30,7 @@ impl<'a> HumanEntity<'a> {
     }
 }
 
-impl<'a> Entity for HumanEntity<'a> {
+impl Entity for HumanEntity {
     fn update(&mut self) {
         self.anim_delay -= 1;
         if self.anim_delay == 0 {
@@ -40,13 +40,13 @@ impl<'a> Entity for HumanEntity<'a> {
         }
     }
 
-    fn draw(&self, canvas: Canvas, render_info: &RenderInfo, scene_info: &SceneInfo) {
+    fn draw(&self, renderer: &mut Renderer, scene_info: &SceneInfo) {
         let world_rect = Rect::from_center_size(self.position, Vec2 { x: 200, y: 200 });
         let view_rect = scene_info.camera.transform(world_rect);
 
-        match crate::render::clip(view_rect, render_info.screen_size) {
+        match crate::render::clip(view_rect, renderer.render_info.screen_size) {
             Some(screen_rect) => {
-                self.texture.draw_idx(canvas, screen_rect, self.anim_idx);
+                self.texture.draw_idx(&mut renderer.canvas, screen_rect, self.anim_idx);
             }
             None => (),
         }

@@ -2,7 +2,7 @@ use sdl2::render::Canvas;
 use sdl2::video::Window;
 
 use crate::render::RenderInfo;
-use crate::types::*;
+use crate::{types::*, Renderer};
 
 use crate::game::entity::Entity;
 use crate::game::ui::UIElement;
@@ -70,21 +70,21 @@ impl<'a> Scene<'a> {
         }
     }
 
-    pub fn render(&self, canvas: &mut Canvas<Window>, render_info: &RenderInfo) {
+    pub fn render(&self, renderer: &mut Renderer) {
         for entity in self.entity.iter() {
-            entity.draw(canvas, render_info, &self.scene_info);
+            entity.draw(renderer, &self.scene_info);
         }
         for ui in self.ui.iter() {
-            ui.draw(canvas, render_info, &self.scene_info);
+            ui.draw(renderer, &self.scene_info);
         }
 
         // Debug: crosshair at the center
         let center = Vec2 {
-            x: render_info.screen_size.x / 2,
-            y: render_info.screen_size.y / 2,
+            x: renderer.render_info.screen_size.x / 2,
+            y: renderer.render_info.screen_size.y / 2,
         };
-        canvas.set_draw_color(sdl2::pixels::Color::RGB(255, 0, 255));
-        canvas
+        renderer.canvas.set_draw_color(sdl2::pixels::Color::RGB(255, 0, 255));
+        renderer.canvas
             .draw_line(
                 Vec2 {
                     x: center.x - 10,
@@ -96,7 +96,7 @@ impl<'a> Scene<'a> {
                 },
             )
             .unwrap();
-        canvas
+        renderer.canvas
             .draw_line(
                 Vec2 {
                     x: center.x,

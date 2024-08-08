@@ -1,10 +1,8 @@
 use std::rc::Rc;
 
-use crate::render::Canvas;
-
 use crate::error::Error;
-
 use crate::render::texture::Texture;
+use crate::render::Canvas;
 use crate::types::*;
 
 pub type Font = Rc<FontInner>;
@@ -13,10 +11,6 @@ pub type Font = Rc<FontInner>;
 pub struct FontInner {
     texture: Texture,
     map: &'static str,
-}
-
-pub fn load_font(texture: Texture, map: &'static str) -> Result<Font, Error> {
-    Ok(Rc::new(FontInner { texture, map }))
 }
 
 impl FontInner {
@@ -43,4 +37,8 @@ impl FontInner {
             }
         })
     }
+}
+
+pub fn load_font(texture: Texture, map: &'static str) -> Result<Font, Error> {
+    Ok(Rc::new(FontInner { texture, map }))
 }

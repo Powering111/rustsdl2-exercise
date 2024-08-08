@@ -1,8 +1,8 @@
-use sdl2::{image::LoadTexture, render::TextureCreator, video::WindowContext};
-use std::{cell::RefCell, collections::HashMap, path::Path, rc::Rc};
+use sdl2::{render::TextureCreator, video::WindowContext};
+use std::{collections::HashMap, path::Path};
 
-use super::texture::{self, Texture};
 use crate::error::Error;
+use crate::render::texture::{self, Texture};
 
 /// Texture manager holding sdl2::render::texture_creator
 /// Index texture by name(&'static str).
@@ -19,21 +19,17 @@ impl TextureManager {
         }
     }
 
-    pub fn load(
-        &mut self,
-        name: &'static str,
-        path: &Path,
-    ) -> Result<(), Error> {
+    pub fn load(&mut self, name: &'static str, path: &Path) -> Result<(), Error> {
         let new_texture = if path.extension().is_some_and(|ext| ext == "json") {
             texture::load_from_json(&self.texture_creator, path)?
         } else {
             texture::load_from_file(&self.texture_creator, path)?
-        }.clone();
-        
+        }
+        .clone();
+
         if self.textures.contains_key(name) {
             Err(Error::AlreadyExists)
-        }
-        else {
+        } else {
             self.textures.insert(name, new_texture);
             println!("loaded texture {name:}");
             Ok(())
@@ -43,7 +39,11 @@ impl TextureManager {
     pub fn get(&self, name: &'static str) -> Texture {
         match self.textures.get(name) {
             Some(txt) => txt.clone(),
-            None => self.textures.get("no_texture").expect(format!("no texture named {name:}").as_str()).clone(),
+            None => self
+                .textures
+                .get("no_texture")
+                .expect(format!("no texture named {name:}").as_str())
+                .clone(),
         }
     }
 }

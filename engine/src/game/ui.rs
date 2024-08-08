@@ -1,5 +1,5 @@
-pub use crate::Renderer;
-pub use crate::game::scene::SceneInfo;
+use crate::game::scene::SceneInfo;
+use crate::Renderer;
 
 pub mod text;
 

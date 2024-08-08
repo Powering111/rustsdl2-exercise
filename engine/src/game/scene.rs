@@ -1,11 +1,7 @@
-use sdl2::render::Canvas;
-use sdl2::video::Window;
-
-use crate::render::RenderInfo;
-use crate::{types::*, Renderer};
-
 use crate::game::entity::Entity;
 use crate::game::ui::UIElement;
+use crate::render::Renderer;
+use crate::types::*;
 
 /// Scene information used to determine what to draw
 pub struct SceneInfo {
@@ -44,13 +40,13 @@ impl Camera {
     }
 }
 
-pub struct Scene<'a> {
+pub struct Scene {
     scene_info: SceneInfo,
     ui: Vec<Box<dyn UIElement>>,
-    entity: Vec<Box<dyn Entity + 'a>>,
+    entity: Vec<Box<dyn Entity>>,
 }
 
-impl<'a> Scene<'a> {
+impl Scene {
     pub fn new() -> Self {
         Self {
             scene_info: SceneInfo {
@@ -60,8 +56,8 @@ impl<'a> Scene<'a> {
             entity: Vec::new(),
         }
     }
-    pub fn add_entity(&mut self, entity: impl Entity + 'a) {
-        self.entity.push(Box::new(entity));
+    pub fn add_entity(&mut self, entity: Box<dyn Entity>) {
+        self.entity.push(entity);
     }
 
     pub fn update(&mut self) {
@@ -83,8 +79,11 @@ impl<'a> Scene<'a> {
             x: renderer.render_info.screen_size.x / 2,
             y: renderer.render_info.screen_size.y / 2,
         };
-        renderer.canvas.set_draw_color(sdl2::pixels::Color::RGB(255, 0, 255));
-        renderer.canvas
+        renderer
+            .canvas
+            .set_draw_color(sdl2::pixels::Color::RGB(255, 0, 255));
+        renderer
+            .canvas
             .draw_line(
                 Vec2 {
                     x: center.x - 10,
@@ -96,7 +95,8 @@ impl<'a> Scene<'a> {
                 },
             )
             .unwrap();
-        renderer.canvas
+        renderer
+            .canvas
             .draw_line(
                 Vec2 {
                     x: center.x,

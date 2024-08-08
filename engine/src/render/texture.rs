@@ -12,7 +12,6 @@ use sdl2::video::WindowContext;
 
 use serde::{Deserialize, Serialize};
 
-
 #[derive(Serialize, Deserialize, Debug)]
 struct Size {
     w: i32,

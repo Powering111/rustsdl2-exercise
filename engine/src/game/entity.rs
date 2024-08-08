@@ -1,10 +1,8 @@
-use crate::render::manager::TextureManager;
 use crate::render::texture::Texture;
-use crate::render::Canvas;
-use crate::{types::*, Renderer};
+use crate::types::*;
+use crate::Renderer;
 
 use crate::game::scene::SceneInfo;
-use crate::render::RenderInfo;
 
 pub trait Entity {
     fn update(&mut self);
@@ -46,7 +44,8 @@ impl Entity for HumanEntity {
 
         match crate::render::clip(view_rect, renderer.render_info.screen_size) {
             Some(screen_rect) => {
-                self.texture.draw_idx(&mut renderer.canvas, screen_rect, self.anim_idx);
+                self.texture
+                    .draw_idx(&mut renderer.canvas, screen_rect, self.anim_idx);
             }
             None => (),
         }

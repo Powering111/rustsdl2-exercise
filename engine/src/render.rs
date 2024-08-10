@@ -21,7 +21,7 @@ pub struct Renderer {
     pub texture_manager: manager::TextureManager,
     pub render_info: RenderInfo,
 
-    fonts: Vec<Font>,
+    pub fonts: Vec<Font>,
 }
 
 impl Renderer {

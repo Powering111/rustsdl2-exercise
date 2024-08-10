@@ -59,6 +59,9 @@ impl Scene {
     pub fn add_entity(&mut self, entity: Box<dyn Entity>) {
         self.entity.push(entity);
     }
+    pub fn add_ui(&mut self, ui: Box<dyn UIElement>) {
+        self.ui.push(ui);
+    }
 
     pub fn update(&mut self) {
         for entity in self.entity.iter_mut() {

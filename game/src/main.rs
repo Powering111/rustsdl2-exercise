@@ -31,6 +31,14 @@ fn main() {
         Vec2 { x: 0, y: 0 },
     )));
 
+    let mut debug_text =
+        game::ui::text::TextElement::new(engine.renderer.fonts.get(0).unwrap().clone());
+    debug_text.text = String::from("asdf");
+    debug_text.pos = Vec2 { x: 100, y: 100 };
+    debug_text.scale = Vec2 { x: 100, y: 200 };
+
+    scene0.add_ui(Box::new(debug_text));
+
     engine.add_scene(scene0);
 
     // main loop

@@ -16,7 +16,7 @@ pub mod types;
 
 /// Game engine.
 pub struct Engine {
-    renderer: render::Renderer,
+    pub renderer: render::Renderer,
 
     // TODO: change current_scene to reference
     current_scene: usize,

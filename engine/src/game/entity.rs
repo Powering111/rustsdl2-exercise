@@ -1,34 +1,51 @@
+use std::cell::RefCell;
+use std::rc::Rc;
+
 use crate::render::texture::Texture;
 use crate::types::*;
-use crate::Renderer;
 
-use crate::game::scene::SceneInfo;
+pub type Entity = Rc<RefCell<dyn EntityTrait>>;
+pub struct EntityDrawInfo {
+    pub world_rect: Rect,
+    pub texture: Texture,
+    pub texture_idx: usize,
+}
 
-pub trait Entity {
+pub trait EntityTrait {
+    fn pos(&self) -> Vec2;
+    fn set_pos(&mut self, new_pos: Vec2);
+
     fn update(&mut self);
-    fn draw(&self, renderer: &mut Renderer, scene_info: &SceneInfo);
+    fn get_draw_info(&self) -> EntityDrawInfo;
 }
 
 /// Human entity for test
-pub struct HumanEntity {
+pub struct CharacterEntity {
     texture: Texture,
     position: Vec2,
     anim_idx: usize,
     anim_delay: usize,
 }
 
-impl HumanEntity {
-    pub fn new(texture: Texture, pos: Vec2) -> Self {
-        Self {
+impl CharacterEntity {
+    pub fn new(texture: Texture, pos: Vec2) -> Rc<RefCell<Self>> {
+        Rc::new(RefCell::new(Self {
             texture,
             position: pos,
             anim_idx: 0,
             anim_delay: 20,
-        }
+        }))
     }
 }
 
-impl Entity for HumanEntity {
+impl EntityTrait for CharacterEntity {
+    fn pos(&self) -> Vec2 {
+        self.position
+    }
+    fn set_pos(&mut self, new_pos: Vec2) {
+        self.position = new_pos;
+    }
+
     fn update(&mut self) {
         self.anim_delay -= 1;
         if self.anim_delay == 0 {
@@ -37,17 +54,11 @@ impl Entity for HumanEntity {
             self.anim_idx = (self.anim_idx + 1) % self.texture.len();
         }
     }
-
-    fn draw(&self, renderer: &mut Renderer, scene_info: &SceneInfo) {
-        let world_rect = Rect::from_center_size(self.position, Vec2 { x: 200, y: 200 });
-        let view_rect = scene_info.camera.transform(world_rect);
-
-        match crate::render::clip(view_rect, renderer.render_info.screen_size) {
-            Some(screen_rect) => {
-                self.texture
-                    .draw_idx(&mut renderer.canvas, screen_rect, self.anim_idx);
-            }
-            None => (),
+    fn get_draw_info(&self) -> EntityDrawInfo {
+        EntityDrawInfo {
+            world_rect: Rect::from_center_size(self.position, Vec2 { x: 200, y: 200 }),
+            texture: self.texture.clone(),
+            texture_idx: self.anim_idx,
         }
     }
 }

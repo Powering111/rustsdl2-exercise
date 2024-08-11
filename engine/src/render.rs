@@ -94,23 +94,24 @@ impl Renderer {
     pub(crate) fn set_screen_size(&mut self, size: Vec2) {
         self.render_info.screen_size = size;
     }
-}
 
-/// transforms rect from view space to screen space.
-/// returns `Some` if the rect is visible,
-/// `None` if the rect is outside of the screen.
-pub fn clip(view_rect: Rect, screen_size: Vec2) -> Option<Rect> {
-    let mut transformed_rect = view_rect.transform(Vec2 {
-        x: screen_size.x / 2,
-        y: screen_size.y / 2,
-    });
+    /// transforms rect from view space to screen space.
+    /// returns `Some` if the rect is visible,
+    /// `None` if the rect is outside of the screen.
+    pub fn clip(&self, view_rect: Rect) -> Option<Rect> {
+        let screen_size = self.render_info.screen_size;
+        let mut transformed_rect = view_rect.transform(Vec2 {
+            x: screen_size.x / 2,
+            y: screen_size.y / 2,
+        });
 
-    // flip vertically to change y-axis direction
-    transformed_rect.y = screen_size.y - transformed_rect.y - transformed_rect.h;
+        // flip vertically to change y-axis direction
+        transformed_rect.y = screen_size.y - transformed_rect.y - transformed_rect.h;
 
-    if transformed_rect.collides(&Rect::from_start_size(Vec2::default(), screen_size)) {
-        Some(transformed_rect)
-    } else {
-        None
+        if transformed_rect.collides(&Rect::from_start_size(Vec2::default(), screen_size)) {
+            Some(transformed_rect)
+        } else {
+            None
+        }
     }
 }

@@ -21,8 +21,11 @@ struct Size {
 #[allow(non_snake_case)]
 #[derive(Serialize, Deserialize, Debug)]
 struct SubTexturePosition {
+    /// subtexture region in the source image
     frame: Rect,
+    /// region to draw in the destination rect
     spriteSourceSize: Rect,
+    /// size of the destination rect
     sourceSize: Size,
 }
 
@@ -84,9 +87,27 @@ pub fn load_from_file(
     let sdl_texture = texture_creator
         .load_texture(path)
         .map_err(|_| Error::TextureCreateFailure)?;
+    let sdl2::render::TextureQuery { width, height, .. } = sdl_texture.query();
     Ok(Rc::new(TextureInner {
         sdl_texture: Rc::new(sdl_texture),
-        positions: vec![],
+        positions: vec![SubTexturePosition {
+            frame: Rect {
+                x: 0,
+                y: 0,
+                w: width as i32,
+                h: height as i32,
+            },
+            spriteSourceSize: Rect {
+                x: 0,
+                y: 0,
+                w: width as i32,
+                h: height as i32,
+            },
+            sourceSize: Size {
+                w: width as i32,
+                h: height as i32,
+            },
+        }],
     }))
 }
 

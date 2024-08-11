@@ -98,6 +98,19 @@ impl Engine {
                         }
                         _ => (),
                     },
+                    Event::KeyDown { keycode, .. } => {
+                        if let Some(keycode) = keycode {
+                            match keycode {
+                                Keycode::Space => {
+                                    curr_scene.toggle_camera_attachment();
+                                }
+                                Keycode::Escape => {
+                                    return;
+                                }
+                                _ => (),
+                            }
+                        }
+                    }
                     Event::MouseWheel { precise_y, .. } => {
                         curr_scene.add_zoom(precise_y);
                     }
